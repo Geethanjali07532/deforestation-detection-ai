@@ -1,0 +1,43 @@
+{
+  "driver_statistics": {
+    "Road Encroachment": {
+      "patch_count": 14,
+      "total_area_ha": 368.1,
+      "mean_patch_ha": 26.29,
+      "area_percentage": 17.49,
+      "color": "#fbc02d"
+    },
+    "Wildfire Scar": {
+      "patch_count": 1,
+      "total_area_ha": 300.02,
+      "mean_patch_ha": 300.02,
+      "area_percentage": 14.26,
+      "color": "#d32f2f"
+    },
+    "Selective Logging": {
+      "patch_count": 0,
+      "total_area_ha": 0.0,
+      "mean_patch_ha": 0.0,
+      "area_percentage": 0.0,
+      "color": "#00bcd4"
+    },
+    "Agricultural Clearcut": {
+      "patch_count": 7,
+      "total_area_ha": 1436.36,
+      "mean_patch_ha": 205.19,
+      "area_percentage": 68.25,
+      "color": "#ff6f00"
+    }
+  },
+  "fragmentation_scene_1": {
+    "total_forest_remaining_ha": 4858.92,
+    "core_forest_ha": 4319.28,
+    "core_forest_percentage": 88.89,
+    "edge_forest_ha": 539.64,
+    "edge_forest_percentage": 11.11,
+    "edge_to_core_ratio": 0.125,
+    "new_deforestation_ha": 699.93,
+    "number_of_forest_fragments": 164,
+    "edge_buffer_threshold_meters": 100.0
+  }
+}

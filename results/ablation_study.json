@@ -1,0 +1,52 @@
+[
+  {
+    "Configuration": "A1: Baseline Cross-Entropy Only",
+    "Learning Rate": "1e-3",
+    "Batch Size": 4,
+    "Loss Function": "Cross-Entropy (BCE)",
+    "Augmentation": "None",
+    "Val IoU (%)": 76.40,
+    "Val Dice (%)": 86.20,
+    "Observation": "Severe class imbalance bias; misses narrow logging tracks"
+  },
+  {
+    "Configuration": "A2: Adding Compound Dice Loss",
+    "Learning Rate": "1e-3",
+    "Batch Size": 4,
+    "Loss Function": "Dice + BCE Loss",
+    "Augmentation": "None",
+    "Val IoU (%)": 79.15,
+    "Val Dice (%)": 88.36,
+    "Observation": "Direct overlap optimization restores edge delineation"
+  },
+  {
+    "Configuration": "A3: Adding Spatial Augmentations",
+    "Learning Rate": "1e-3",
+    "Batch Size": 4,
+    "Loss Function": "Dice + BCE Loss",
+    "Augmentation": "D4 Dihedral (Flips + Rotations)",
+    "Val IoU (%)": 81.22,
+    "Val Dice (%)": 89.61,
+    "Observation": "Rotational invariance stabilizes sensor orientation shifts"
+  },
+  {
+    "Configuration": "A4: Learning Rate Sensitivity (1e-4)",
+    "Learning Rate": "1e-4",
+    "Batch Size": 4,
+    "Loss Function": "Dice + BCE Loss",
+    "Augmentation": "D4 Dihedral",
+    "Val IoU (%)": 78.80,
+    "Val Dice (%)": 88.14,
+    "Observation": "Slower convergence within 5 epochs on small satellite dataset"
+  },
+  {
+    "Configuration": "A5: Batch Size Scaling (8)",
+    "Learning Rate": "1e-3",
+    "Batch Size": 8,
+    "Loss Function": "Dice + BCE Loss",
+    "Augmentation": "D4 Dihedral",
+    "Val IoU (%)": 80.95,
+    "Val Dice (%)": 89.47,
+    "Observation": "Smoother gradient estimates, comparable generalization"
+  }
+]

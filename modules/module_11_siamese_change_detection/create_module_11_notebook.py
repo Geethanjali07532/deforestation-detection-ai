@@ -1,0 +1,189 @@
+"""
+create_module_11_notebook.py
+Generates the interactive Jupyter Notebook for Module 11: Multi-Temporal Siamese Change Detection.
+"""
+
+import json
+import os
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# 🌲 Module 11: Multi-Temporal Change Detection Using Siamese Neural Networks\n",
+            "\n",
+            "Welcome to **Module 11** of the **Deforestation Detection from Satellite Images** project!\n",
+            "\n",
+            "### 🎯 Learning Objectives\n",
+            "1. **Multi-Temporal Imagery**: Understand bi-temporal change detection from pre-disturbance ($T_1$) and post-disturbance ($T_2$) satellite scenes.\n",
+            "2. **Siamese Neural Networks**: Implement weight-sharing dual-branch encoders ($E_\\theta$) in PyTorch.\n",
+            "3. **Multi-Scale Differential Features**: Extract absolute difference representations $D^k = |f_1^k - f_2^k|$ across all hierarchical skip levels.\n",
+            "4. **Compound Change Loss**: Solve severe class imbalance in sparse deforestation ground truth masks.\n",
+            "5. **Benchmark vs Traditional $\\Delta$NDVI**: Contrast Deep Siamese performance against traditional vegetation index differencing."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import os\n",
+            "import sys\n",
+            "import numpy as np\n",
+            "import matplotlib.pyplot as plt\n",
+            "import torch\n",
+            "import torch.nn.functional as F\n",
+            "\n",
+            "# Add project root to sys.path\n",
+            "project_root = os.path.abspath('..')\n",
+            "if project_root not in sys.path:\n",
+            "    sys.path.insert(0, project_root)\n",
+            "\n",
+            "from modules.module_11_siamese_change_detection.siamese_dataset import create_siamese_dataloaders\n",
+            "from modules.module_11_siamese_change_detection.siamese_model import SiameseUNetChangeDetector\n",
+            "from modules.module_11_siamese_change_detection.trainer import train_siamese_detector, evaluate_siamese_detector\n",
+            "\n",
+            "%matplotlib inline\n",
+            "device = 'cuda' if torch.cuda.is_available() else 'cpu'\n",
+            "print(f\"✅ Module 11 Siamese environment ready on device: [{device}]\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 1. Load Bi-Temporal Satellite Pairs\n",
+            "\n",
+            "We load paired satellite imagery $(T_1, T_2)$ and ground-truth deforestation masks."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "train_loader, val_loader, test_loader = create_siamese_dataloaders(\n",
+            "    dataset_root=\"../dataset\",\n",
+            "    tile_size=128,\n",
+            "    batch_size=8,\n",
+            "    max_train_tiles=32,\n",
+            "    max_val_tiles=8\n",
+            ")\n",
+            "\n",
+            "print(f\"Train pairs: {len(train_loader.dataset)} | Val pairs: {len(val_loader.dataset)} | Test pairs: {len(test_loader.dataset)}\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 2. Inspect Siamese Architecture\n",
+            "\n",
+            "Let's instantiate `SiameseUNetChangeDetector` and count parameters."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "model = SiameseUNetChangeDetector(in_channels=5, out_channels=1, base_features=16)\n",
+            "n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)\n",
+            "print(f\"Siamese Network Trainable Parameters: {n_params:,}\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 3. Train Siamese Model\n",
+            "\n",
+            "We train the model using Compound Change Loss (Weighted BCE + Dice Loss)."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "trained_model, history = train_siamese_detector(\n",
+            "    model=model,\n",
+            "    train_loader=train_loader,\n",
+            "    val_loader=val_loader,\n",
+            "    epochs=5,\n",
+            "    lr=1e-3,\n",
+            "    device=device\n",
+            ")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 4. Visualizing Multi-Temporal Change Predictions\n",
+            "\n",
+            "Let's compare Pre-disturbance RGB ($T_1$), Post-disturbance RGB ($T_2$), Siamese Change Probability Map, and Ground Truth Deforestation."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "def make_rgb(tensor_5ch):\n",
+            "    arr = tensor_5ch.cpu().numpy()\n",
+            "    def strt(b):\n",
+            "        p2, p98 = np.percentile(b, (2, 98))\n",
+            "        return np.clip((b - p2) / (p98 - p2 + 1e-8), 0.0, 1.0) if p98 > p2 else np.clip(b, 0.0, 1.0)\n",
+            "    return np.stack([strt(arr[2]), strt(arr[1]), strt(arr[0])], axis=-1)\n",
+            "\n",
+            "trained_model.eval()\n",
+            "sample_t1, sample_t2, sample_mask = next(iter(test_loader))\n",
+            "with torch.no_grad():\n",
+            "    logits, diff_feats = trained_model.forward_with_features(sample_t1[0:1].to(device), sample_t2[0:1].to(device))\n",
+            "    prob_map = torch.sigmoid(logits).cpu().numpy()[0, 0]\n",
+            "    bin_pred = (prob_map >= 0.5).astype(int)\n",
+            "\n",
+            "fig, axes = plt.subplots(1, 5, figsize=(20, 4))\n",
+            "axes[0].imshow(make_rgb(sample_t1[0]))\n",
+            "axes[0].set_title(\"Pre-Disturbance (T1)\")\n",
+            "axes[0].axis(\"off\")\n",
+            "\n",
+            "axes[1].imshow(make_rgb(sample_t2[0]))\n",
+            "axes[1].set_title(\"Post-Disturbance (T2)\")\n",
+            "axes[1].axis(\"off\")\n",
+            "\n",
+            "im_prob = axes[2].imshow(prob_map, cmap=\"inferno\", vmin=0, vmax=1)\n",
+            "axes[2].set_title(\"Siamese Change Prob\")\n",
+            "axes[2].axis(\"off\")\n",
+            "plt.colorbar(im_prob, ax=axes[2], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "axes[3].imshow(bin_pred, cmap=\"Reds\", vmin=0, vmax=1)\n",
+            "axes[3].set_title(\"Binary Deforestation\")\n",
+            "axes[3].axis(\"off\")\n",
+            "\n",
+            "axes[4].imshow(sample_mask[0, 0].numpy(), cmap=\"Greens\", vmin=0, vmax=1)\n",
+            "axes[4].set_title(\"Ground Truth Mask\")\n",
+            "axes[4].axis(\"off\")\n",
+            "\n",
+            "plt.tight_layout()\n",
+            "plt.show()"
+        ]
+    }
+]
+
+notebook = {
+    "cells": cells,
+    "metadata": {
+        "language_info": {"name": "python", "version": "3.13"}
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+out_path = os.path.join(os.path.dirname(__file__), "..", "..", "notebooks", "11_multitemporal_siamese_change_detection.ipynb")
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=2)
+
+print(f"Created Module 11 Notebook at: {out_path}")

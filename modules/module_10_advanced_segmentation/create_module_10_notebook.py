@@ -1,0 +1,252 @@
+"""
+create_module_10_notebook.py
+Generates the interactive Jupyter Notebook for Module 10: Advanced Segmentation Architectures.
+"""
+
+import json
+import os
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# 🌲 Module 10: Advanced Segmentation Architectures\n",
+            "\n",
+            "Welcome to **Module 10** of the **Deforestation Detection from Satellite Images** project!\n",
+            "\n",
+            "### 🎯 Learning Objectives\n",
+            "1. **Beyond Baseline U-Net**: Understand the limitations of standard skip connections on complex canopy boundaries.\n",
+            "2. **Attention Gates (Attention U-Net)**: Implement dynamic feature gating to amplify forest regions and suppress background artifacts.\n",
+            "3. **Atrous Spatial Pyramid Pooling (DeepLabV3-Lite)**: Use dilated convolutions to capture multi-scale context without resolution loss.\n",
+            "4. **Nested Dense Skips (U-Net++)**: Bridge semantic gaps between encoder and decoder sub-networks.\n",
+            "5. **Benchmarking & Latency**: Systematically compare parameters, CPU latency, IoU, and Dice score."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import os\n",
+            "import sys\n",
+            "import time\n",
+            "import numpy as np\n",
+            "import pandas as pd\n",
+            "import matplotlib.pyplot as plt\n",
+            "import torch\n",
+            "import torch.nn.functional as F\n",
+            "\n",
+            "# Add project root to sys.path\n",
+            "project_root = os.path.abspath('..')\n",
+            "if project_root not in sys.path:\n",
+            "    sys.path.insert(0, project_root)\n",
+            "\n",
+            "from modules.module_09_unet_segmentation.unet_model import ForestUNet\n",
+            "from modules.module_09_unet_segmentation.segmentation_dataset import create_segmentation_dataloaders\n",
+            "from modules.module_10_advanced_segmentation.advanced_models import AttentionUNet, DeepLabV3Lite, NestedUNetLite\n",
+            "from modules.module_10_advanced_segmentation.model_comparator import compare_segmentation_models, count_parameters\n",
+            "\n",
+            "%matplotlib inline\n",
+            "device = 'cuda' if torch.cuda.is_available() else 'cpu'\n",
+            "print(f\"✅ Module 10 environment ready on device: [{device}]\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 1. Load Multispectral Satellite DataLoaders\n",
+            "\n",
+            "We load 5-band (Blue, Green, Red, NIR, SWIR) satellite scenes and paired binary forest masks."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "train_loader, val_loader, test_loader = create_segmentation_dataloaders(\n",
+            "    dataset_root=\"../dataset\",\n",
+            "    tile_size=128,\n",
+            "    batch_size=8,\n",
+            "    max_train_tiles=24,\n",
+            "    max_val_tiles=8\n",
+            ")\n",
+            "\n",
+            "print(f\"Train tiles: {len(train_loader.dataset)} | Val tiles: {len(val_loader.dataset)} | Test tiles: {len(test_loader.dataset)}\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 2. Inspect Architectures & Trainable Parameters\n",
+            "\n",
+            "Let's compare the parameter footprints of the 4 models."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "models_to_test = {\n",
+            "    \"Standard U-Net\": ForestUNet(in_channels=5, out_channels=1, base_features=16),\n",
+            "    \"Attention U-Net\": AttentionUNet(in_channels=5, out_channels=1, base_features=16),\n",
+            "    \"DeepLabV3-Lite\": DeepLabV3Lite(in_channels=5, out_channels=1, base_features=16),\n",
+            "    \"Nested U-Net++\": NestedUNetLite(in_channels=5, out_channels=1, base_features=16),\n",
+            "}\n",
+            "\n",
+            "for name, m in models_to_test.items():\n",
+            "    print(f\"{name:<18}: {count_parameters(m):>9,} parameters\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 3. Train & Benchmark All Models\n",
+            "\n",
+            "We train each architecture under identical conditions (BCE + Dice Compound Loss, Adam optimizer, lr=1e-3)."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "leaderboard_df, trained_models = compare_segmentation_models(\n",
+            "    models_dict=models_to_test,\n",
+            "    train_loader=train_loader,\n",
+            "    val_loader=val_loader,\n",
+            "    test_loader=test_loader,\n",
+            "    epochs=4,\n",
+            "    lr=1e-3,\n",
+            "    device=device\n",
+            ")\n",
+            "\n",
+            "leaderboard_df"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 4. Visualizing Performance Trade-offs\n",
+            "\n",
+            "Let's visualize the Mean IoU, Dice Score, CPU Latency, and Parameter efficiency."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))\n",
+            "\n",
+            "archs = leaderboard_df[\"Architecture\"].tolist()\n",
+            "ious = [v * 100 for v in leaderboard_df[\"Mean IoU\"]]\n",
+            "dices = [v * 100 for v in leaderboard_df[\"Dice Score\"]]\n",
+            "latencies = leaderboard_df[\"Latency (ms)\"].tolist()\n",
+            "params_k = [int(p.replace(\",\", \"\")) / 1000.0 for p in leaderboard_df[\"Parameters\"]]\n",
+            "\n",
+            "# 1. IoU & Dice\n",
+            "x = np.arange(len(archs))\n",
+            "width = 0.35\n",
+            "ax1.bar(x - width/2, ious, width, label=\"Mean IoU (%)\", color=\"#2e7d32\")\n",
+            "ax1.bar(x + width/2, dices, width, label=\"Dice (%)\", color=\"#0288d1\")\n",
+            "ax1.set_title(\"Mean IoU & Dice Score\", fontweight=\"bold\")\n",
+            "ax1.set_xticks(x)\n",
+            "ax1.set_xticklabels(archs, rotation=15, ha=\"right\")\n",
+            "ax1.set_ylim(0, 110)\n",
+            "ax1.legend()\n",
+            "ax1.grid(axis=\"y\", linestyle=\"--\", alpha=0.5)\n",
+            "\n",
+            "# 2. Latency\n",
+            "ax2.bar(archs, latencies, color=\"#ff8f00\", width=0.5)\n",
+            "ax2.set_title(\"Latency per Tile (ms)\", fontweight=\"bold\")\n",
+            "ax2.set_xticklabels(archs, rotation=15, ha=\"right\")\n",
+            "ax2.grid(axis=\"y\", linestyle=\"--\", alpha=0.5)\n",
+            "\n",
+            "# 3. Efficiency Scatter\n",
+            "ax3.scatter(params_k, ious, s=200, color=\"#8e24aa\", edgecolors=\"black\")\n",
+            "for i, arch in enumerate(archs):\n",
+            "    ax3.annotate(f\" {arch}\", (params_k[i], ious[i]), fontsize=9, fontweight=\"bold\")\n",
+            "ax3.set_xlabel(\"Parameters (Thousands)\", fontweight=\"bold\")\n",
+            "ax3.set_ylabel(\"Mean IoU (%)\", fontweight=\"bold\")\n",
+            "ax3.set_title(\"Parameter Footprint vs IoU\", fontweight=\"bold\")\n",
+            "ax3.grid(True, linestyle=\"--\", alpha=0.5)\n",
+            "\n",
+            "plt.tight_layout()\n",
+            "plt.show()"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 5. Visualizing Attention Gate Coefficient Maps\n",
+            "\n",
+            "Attention U-Net outputs attention maps $\\alpha$ at each skip level, dynamically highlighting target canopies."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "def make_rgb(tensor_5ch):\n",
+            "    arr = tensor_5ch.cpu().numpy()\n",
+            "    def strt(b):\n",
+            "        p2, p98 = np.percentile(b, (2, 98))\n",
+            "        return np.clip((b - p2) / (p98 - p2 + 1e-8), 0.0, 1.0) if p98 > p2 else np.clip(b, 0.0, 1.0)\n",
+            "    return np.stack([strt(arr[2]), strt(arr[1]), strt(arr[0])], axis=-1)\n",
+            "\n",
+            "att_model = trained_models[\"Attention U-Net\"]\n",
+            "att_model.eval()\n",
+            "\n",
+            "sample_x, sample_y = next(iter(test_loader))\n",
+            "with torch.no_grad():\n",
+            "    logits, att_maps = att_model.forward_with_attention_maps(sample_x[0:1].to(device))\n",
+            "    prob_map = torch.sigmoid(logits).cpu().numpy()[0, 0]\n",
+            "\n",
+            "fig, axes = plt.subplots(1, 6, figsize=(20, 3.8))\n",
+            "axes[0].imshow(make_rgb(sample_x[0]))\n",
+            "axes[0].set_title(\"Input RGB\")\n",
+            "axes[0].axis(\"off\")\n",
+            "\n",
+            "axes[1].imshow(sample_y[0, 0].numpy(), cmap=\"Greens\")\n",
+            "axes[1].set_title(\"Ground Truth\")\n",
+            "axes[1].axis(\"off\")\n",
+            "\n",
+            "for idx, (lvl, m_tensor) in enumerate(att_maps.items(), start=2):\n",
+            "    m_resized = F.interpolate(m_tensor, size=(128, 128), mode=\"bilinear\", align_corners=False).cpu().numpy()[0, 0]\n",
+            "    axes[idx].imshow(m_resized, cmap=\"magma\", vmin=0, vmax=1)\n",
+            "    axes[idx].set_title(f\"Attention {lvl}\")\n",
+            "    axes[idx].axis(\"off\")\n",
+            "\n",
+            "axes[5].imshow(prob_map, cmap=\"viridis\", vmin=0, vmax=1)\n",
+            "axes[5].set_title(\"Predicted Prob\")\n",
+            "axes[5].axis(\"off\")\n",
+            "\n",
+            "plt.tight_layout()\n",
+            "plt.show()"
+        ]
+    }
+]
+
+notebook = {
+    "cells": cells,
+    "metadata": {
+        "language_info": {"name": "python", "version": "3.13"}
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+out_path = os.path.join(os.path.dirname(__file__), "..", "..", "notebooks", "10_advanced_segmentation_architectures.ipynb")
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=2)
+
+print(f"Created Module 10 Notebook at: {out_path}")

@@ -1,0 +1,41 @@
+{
+  "status": "SUCCESS",
+  "execution_time_seconds": 4.6,
+  "input_scenes": {
+    "before": "C:\\Users\\LENOVO\\deforestation\\dataset\\test\\before\\scene_test_002.tif",
+    "after": "C:\\Users\\LENOVO\\deforestation\\dataset\\test\\after\\scene_test_002.tif",
+    "dimensions": [
+      5,
+      256,
+      256
+    ],
+    "crs": "EPSG:32620"
+  },
+  "detection_metrics": {
+    "threshold": 0.5,
+    "deforested_pixels": 5329,
+    "total_pixels": 65536,
+    "deforestation_fraction_pct": 8.13,
+    "total_deforested_ha": 53.29
+  },
+  "severity_distribution": {
+    "undisturbed_ha": 602.07,
+    "low_severity_ha": 3.6,
+    "moderate_severity_ha": 0.98,
+    "high_severity_ha": 48.71,
+    "total_deforested_ha": 53.29
+  },
+  "driver_attribution": {
+    "Road Encroachment": 4,
+    "Agricultural Clearcut": 2,
+    "Selective Logging": 1,
+    "Wildfire Scar": 1
+  },
+  "gis_exports": {
+    "geojson": "C:\\Users\\LENOVO\\deforestation\\outputs\\module_19\\batch_run\\scene_test_002\\deforestation_alerts.geojson",
+    "shapefile": "C:\\Users\\LENOVO\\deforestation\\outputs\\module_19\\batch_run\\scene_test_002\\shapefile\\deforestation_alerts.shp",
+    "cog_geotiff": "C:\\Users\\LENOVO\\deforestation\\outputs\\module_19\\batch_run\\scene_test_002\\deforestation_severity_cog.tif",
+    "polygon_count": 23
+  },
+  "visualization": "C:\\Users\\LENOVO\\deforestation\\outputs\\module_19\\batch_run\\scene_test_002\\pipeline_summary_composite.png"
+}

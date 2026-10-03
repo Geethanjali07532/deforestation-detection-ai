@@ -1,0 +1,51 @@
+{
+  "evaluation_timestamp": "2026-10-02T14:48:14Z",
+  "test_scenes_count": 4,
+  "models": {
+    "Traditional dNDVI Differencing": {
+      "iou": 93.38,
+      "dice": 96.55,
+      "precision": 93.38,
+      "recall": 100.0,
+      "pixel_accuracy": 99.44,
+      "false_positive_rate": 0.62,
+      "false_negative_rate": 0.0
+    },
+    "Random Forest Pixel Classifier": {
+      "iou": 100.0,
+      "dice": 100.0,
+      "precision": 100.0,
+      "recall": 100.0,
+      "pixel_accuracy": 100.0,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.0
+    },
+    "ForestUNet Segmentation": {
+      "iou": 93.05,
+      "dice": 96.39,
+      "precision": 93.05,
+      "recall": 100.0,
+      "pixel_accuracy": 93.05,
+      "false_positive_rate": 100.0,
+      "false_negative_rate": 0.0
+    },
+    "Siamese Change Detector": {
+      "iou": 81.22,
+      "dice": 89.61,
+      "precision": 95.0,
+      "recall": 84.91,
+      "pixel_accuracy": 98.2,
+      "false_positive_rate": 0.54,
+      "false_negative_rate": 15.09
+    },
+    "Early Fusion 4-Class Network": {
+      "iou": 49.65,
+      "dice": 66.19,
+      "precision": 97.01,
+      "recall": 50.33,
+      "pixel_accuracy": 95.25,
+      "false_positive_rate": 0.08,
+      "false_negative_rate": 49.67
+    }
+  }
+}

@@ -1,0 +1,5 @@
+scene_id,deforested_ha,deforested_pct,polygons,low_severity_ha,mod_severity_ha,high_severity_ha,execution_seconds
+scene_test_001,81.54,12.44,32,3.02,0.65,77.87,5.43
+scene_test_002,53.29,8.13,23,3.6,0.98,48.71,4.6
+scene_test_003,103.53,15.8,26,3.12,1.04,99.37,5.35
+scene_test_004,35.02,5.34,22,3.5500000000000003,0.88,30.59,3.6

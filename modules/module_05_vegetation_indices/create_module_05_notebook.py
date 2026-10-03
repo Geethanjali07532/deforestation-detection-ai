@@ -1,0 +1,236 @@
+"""
+create_module_05_notebook.py
+Generates the interactive Jupyter Notebook for Module 5.
+"""
+
+import json
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# 🌱 Module 5: Vegetation Index Analysis\n",
+            "\n",
+            "Welcome to **Module 5** of the **Deforestation Detection from Satellite Images** project!\n",
+            "\n",
+            "### 🎯 Learning Objectives\n",
+            "1. **NDVI (Normalized Difference Vegetation Index)**: Calculate and interpret NDVI using Red and NIR bands.\n",
+            "2. **EVI (Enhanced Vegetation Index)**: Correct for atmospheric aerosol scattering and canopy saturation.\n",
+            "3. **SAVI (Soil-Adjusted Vegetation Index)**: Suppress bright soil background reflectance in partial clearings.\n",
+            "4. **NDWI (Normalized Difference Water/Moisture Index)**: Monitor canopy liquid water content.\n",
+            "5. **NBR (Normalized Burn Ratio)**: Detect fire scars and slash burns.\n",
+            "6. **Build Practical Workflow**: $\\text{Satellite Image} \\rightarrow \\text{NDVI Calculation} \\rightarrow \\text{Vegetation Map}$ to distinguish vegetation from non-vegetation."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import os\n",
+            "import sys\n",
+            "import numpy as np\n",
+            "import matplotlib.pyplot as plt\n",
+            "import rasterio\n",
+            "\n",
+            "# Add project root to sys.path\n",
+            "project_root = os.path.abspath('..')\n",
+            "if project_root not in sys.path:\n",
+            "    sys.path.insert(0, project_root)\n",
+            "\n",
+            "from modules.module_05_vegetation_indices.vegetation_indices import (\n",
+            "    VegetationIndexCalculator,\n",
+            "    VegetationClassifier\n",
+            ")\n",
+            "\n",
+            "%matplotlib inline\n",
+            "print(\"✅ Module 5 components loaded successfully!\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 1. Load Multispectral Satellite Scene\n",
+            "\n",
+            "Let's load the 5-band satellite scene: Blue, Green, Red, NIR, SWIR."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "sample_b_path = \"../dataset/train/before/scene_train_001.tif\"\n",
+            "with rasterio.open(sample_b_path) as src:\n",
+            "    bands = src.read()\n",
+            "\n",
+            "print(f\"Loaded satellite scene shape: {bands.shape} (Bands, Height, Width)\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 2. Compute All Remote Sensing Indices\n",
+            "\n",
+            "We calculate:\n",
+            "- **NDVI**: $\\frac{\\text{NIR} - \\text{Red}}{\\text{NIR} + \\text{Red}}$\n",
+            "- **EVI**: $2.5 \\times \\frac{\\text{NIR} - \\text{Red}}{\\text{NIR} + 6 \\cdot \\text{Red} - 7.5 \\cdot \\text{Blue} + 1}$\n",
+            "- **SAVI**: $\\frac{\\text{NIR} - \\text{Red}}{\\text{NIR} + \\text{Red} + 0.5} \\times 1.5$\n",
+            "- **NDWI**: $\\frac{\\text{NIR} - \\text{SWIR}}{\\text{NIR} + \\text{SWIR}}$\n",
+            "- **NBR**: $\\frac{\\text{NIR} - \\text{SWIR}}{\\text{NIR} + \\text{SWIR}}$"
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "calc = VegetationIndexCalculator(bands)\n",
+            "indices = calc.compute_all_indices()\n",
+            "\n",
+            "for name, idx in indices.items():\n",
+            "    print(f\"{name:<15}: Min = {idx.min():.3f}, Max = {idx.max():.3f}, Mean = {idx.mean():.3f}\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 3. Compare Spectral Indices Side-by-Side\n",
+            "\n",
+            "Visualizing the response across each index reveals canopy structure, moisture, and background soil suppression."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "def make_rgb(b):\n",
+            "    def s(arr):\n",
+            "        p2, p98 = np.percentile(arr, (2, 98))\n",
+            "        return np.clip((arr - p2) / (p98 - p2 + 1e-8), 0.0, 1.0)\n",
+            "    return np.stack([s(b[2]), s(b[1]), s(b[0])], axis=-1)\n",
+            "\n",
+            "fig, axes = plt.subplots(2, 3, figsize=(16, 10), constrained_layout=True)\n",
+            "axes[0, 0].imshow(make_rgb(bands))\n",
+            "axes[0, 0].set_title(\"True Color (RGB)\", fontweight=\"bold\")\n",
+            "axes[0, 0].axis(\"off\")\n",
+            "\n",
+            "im1 = axes[0, 1].imshow(indices[\"NDVI\"], cmap=\"RdYlGn\", vmin=-0.2, vmax=0.9)\n",
+            "axes[0, 1].set_title(\"NDVI\", fontweight=\"bold\")\n",
+            "axes[0, 1].axis(\"off\")\n",
+            "fig.colorbar(im1, ax=axes[0, 1], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "im2 = axes[0, 2].imshow(indices[\"EVI\"], cmap=\"YlGn\", vmin=0.0, vmax=1.0)\n",
+            "axes[0, 2].set_title(\"EVI (Atmosphere & Soil Corrected)\", fontweight=\"bold\")\n",
+            "axes[0, 2].axis(\"off\")\n",
+            "fig.colorbar(im2, ax=axes[0, 2], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "im3 = axes[1, 0].imshow(indices[\"SAVI\"], cmap=\"YlGn\", vmin=0.0, vmax=0.9)\n",
+            "axes[1, 0].set_title(\"SAVI (Soil-Adjusted)\", fontweight=\"bold\")\n",
+            "axes[1, 0].axis(\"off\")\n",
+            "fig.colorbar(im3, ax=axes[1, 0], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "im4 = axes[1, 1].imshow(indices[\"NDWI_Moisture\"], cmap=\"BrBG\", vmin=-0.6, vmax=0.8)\n",
+            "axes[1, 1].set_title(\"NDWI Moisture (Leaf Water)\", fontweight=\"bold\")\n",
+            "axes[1, 1].axis(\"off\")\n",
+            "fig.colorbar(im4, ax=axes[1, 1], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "im5 = axes[1, 2].imshow(indices[\"NBR\"], cmap=\"copper\", vmin=-0.4, vmax=0.8)\n",
+            "axes[1, 2].set_title(\"NBR (Burn Ratio)\", fontweight=\"bold\")\n",
+            "axes[1, 2].axis(\"off\")\n",
+            "fig.colorbar(im5, ax=axes[1, 2], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "plt.show()"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 4. Practical Roadmap Workflow: Satellite Image $\\rightarrow$ NDVI $\\rightarrow$ Vegetation Map\n",
+            "\n",
+            "We categorize NDVI into discrete land-cover bins:\n",
+            "- **Water**: $\\text{NDVI} < 0.0$\n",
+            "- **Bare Soil / Cleared**: $0.0 \\le \\text{NDVI} < 0.25$\n",
+            "- **Degraded / Edge**: $0.25 \\le \\text{NDVI} < 0.55$\n",
+            "- **Dense Forest**: $\\text{NDVI} \\ge 0.55$"
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "classifier = VegetationClassifier(forest_threshold=0.50)\n",
+            "ndvi = indices[\"NDVI\"]\n",
+            "veg_map = classifier.create_vegetation_map(ndvi)\n",
+            "\n",
+            "from matplotlib.colors import ListedColormap\n",
+            "cmap_custom = ListedColormap([\"#2980b9\", \"#d35400\", \"#f1c40f\", \"#27ae60\"])\n",
+            "\n",
+            "fig, axes = plt.subplots(1, 3, figsize=(16, 5.5), constrained_layout=True)\n",
+            "axes[0].imshow(make_rgb(bands))\n",
+            "axes[0].set_title(\"1. Satellite Image (RGB)\", fontweight=\"bold\")\n",
+            "axes[0].axis(\"off\")\n",
+            "\n",
+            "im_n = axes[1].imshow(ndvi, cmap=\"RdYlGn\", vmin=-0.2, vmax=0.9)\n",
+            "axes[1].set_title(\"2. NDVI Calculation\", fontweight=\"bold\")\n",
+            "axes[1].axis(\"off\")\n",
+            "fig.colorbar(im_n, ax=axes[1], fraction=0.046, pad=0.04)\n",
+            "\n",
+            "im_m = axes[2].imshow(veg_map, cmap=cmap_custom, vmin=0, vmax=3)\n",
+            "axes[2].set_title(\"3. Classified Vegetation Map\", fontweight=\"bold\", color=\"darkgreen\")\n",
+            "axes[2].axis(\"off\")\n",
+            "cbar2 = fig.colorbar(im_m, ax=axes[2], fraction=0.046, pad=0.04, ticks=[0.375, 1.125, 1.875, 2.625])\n",
+            "cbar2.ax.set_yticklabels([\"Water\", \"Soil/Cleared\", \"Degraded\", \"Dense Forest\"], fontweight=\"bold\")\n",
+            "\n",
+            "plt.show()"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 5. Quantitative Land Cover & Forest Area Breakdown\n",
+            "\n",
+            "Quantify the exact forest canopy area in hectares ($1\\text{ pixel at 10m} = 0.01\\text{ ha}$)."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "stats = classifier.compute_class_statistics(veg_map)\n",
+            "for c_name, s in stats.items():\n",
+            "    print(f\"{c_name:<25}: {s['pixel_count']:>6} pixels | {s['percentage']:>6.2f}% | {s['area_ha']:>8.2f} ha\")"
+        ]
+    }
+]
+
+notebook = {
+    "cells": cells,
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.13"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+with open("notebooks/05_vegetation_index_analysis.ipynb", "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=2)
+
+print("Module 5 notebook generated at notebooks/05_vegetation_index_analysis.ipynb")

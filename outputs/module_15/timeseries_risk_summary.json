@@ -1,0 +1,65 @@
+{
+  "breakpoints_detected": {
+    "Stable Intact Forest": [],
+    "Abrupt Clearcut": [
+      {
+        "break_index": 18,
+        "break_time": 19.0,
+        "pre_disturbance_mean": 0.835,
+        "post_disturbance_mean": 0.194,
+        "drop_magnitude": 0.64,
+        "pre_slope": -0.0191,
+        "recovery_slope": -0.0069,
+        "regime": "Permanent Clearcut / Non-Forest Conversion"
+      }
+    ],
+    "Wildfire with Regrowth": [
+      {
+        "break_index": 14,
+        "break_time": 15.0,
+        "pre_disturbance_mean": 0.808,
+        "post_disturbance_mean": 0.216,
+        "drop_magnitude": 0.592,
+        "pre_slope": 0.0314,
+        "recovery_slope": 0.0449,
+        "regime": "Post-Disturbance Regrowth / Secondary Succession"
+      }
+    ],
+    "Progressive Degradation": []
+  },
+  "forecast_12mo": {
+    "projected_slope": -0.011990354229544458,
+    "projected_annual_rate_pct": -14.388425075453348,
+    "t_plus_12_ndvi": 0.29380532320578046,
+    "ci_95": [
+      0.19274103933653794,
+      0.39486960707502294
+    ]
+  },
+  "spatial_frontier_risk_stats": {
+    "Low / Deep Core Risk": {
+      "pixel_count": 54779,
+      "area_hectares": 4930.11,
+      "area_km2": 49.3011,
+      "percentage_of_forest": 101.47
+    },
+    "Moderate Vulnerability": {
+      "pixel_count": 6126,
+      "area_hectares": 551.34,
+      "area_km2": 5.5134,
+      "percentage_of_forest": 11.35
+    },
+    "High Frontier Risk": {
+      "pixel_count": 3957,
+      "area_hectares": 356.13,
+      "area_km2": 3.5613,
+      "percentage_of_forest": 7.33
+    },
+    "Critical Imminent Risk": {
+      "pixel_count": 674,
+      "area_hectares": 60.66,
+      "area_km2": 0.6066,
+      "percentage_of_forest": 1.25
+    }
+  }
+}

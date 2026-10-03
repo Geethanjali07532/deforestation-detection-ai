@@ -1,0 +1,107 @@
+{
+  "test_metrics": {
+    "accuracy": 0.9996666666666667,
+    "macro_f1": 0.9841229838709677,
+    "weighted_f1": 0.9996668346774193
+  },
+  "feature_importances": [
+    {
+      "Feature": "dndmi",
+      "Importance": 0.18542047488503002
+    },
+    {
+      "Feature": "rdnbr",
+      "Importance": 0.1546451474856378
+    },
+    {
+      "Feature": "dnbr",
+      "Importance": 0.15265984099087454
+    },
+    {
+      "Feature": "rbr",
+      "Importance": 0.12089631367440964
+    },
+    {
+      "Feature": "nir_ratio",
+      "Importance": 0.11628042147263148
+    },
+    {
+      "Feature": "red_t2",
+      "Importance": 0.07176031908914034
+    },
+    {
+      "Feature": "dndvi",
+      "Importance": 0.06629119776627562
+    },
+    {
+      "Feature": "swir_t2",
+      "Importance": 0.03647658144814985
+    },
+    {
+      "Feature": "green_t2",
+      "Importance": 0.03023685997125386
+    },
+    {
+      "Feature": "nbr_post",
+      "Importance": 0.01507554697655262
+    },
+    {
+      "Feature": "blue_t2",
+      "Importance": 0.009244997631581693
+    },
+    {
+      "Feature": "nir_t2",
+      "Importance": 0.008721239997722023
+    },
+    {
+      "Feature": "nbr_pre",
+      "Importance": 0.007856867513487797
+    },
+    {
+      "Feature": "nir_t1",
+      "Importance": 0.006287858542241708
+    },
+    {
+      "Feature": "swir_t1",
+      "Importance": 0.005642954128103452
+    },
+    {
+      "Feature": "blue_t1",
+      "Importance": 0.005635613981569609
+    },
+    {
+      "Feature": "green_t1",
+      "Importance": 0.00451873333118035
+    },
+    {
+      "Feature": "red_t1",
+      "Importance": 0.0023490311141576787
+    }
+  ],
+  "scene_area_stats": {
+    "Undisturbed / Stable": {
+      "pixel_count": 57089,
+      "area_hectares": 5138.01,
+      "area_km2": 51.3801,
+      "percentage": 87.11
+    },
+    "Low Severity": {
+      "pixel_count": 323,
+      "area_hectares": 29.07,
+      "area_km2": 0.2907,
+      "percentage": 0.49
+    },
+    "Moderate Severity": {
+      "pixel_count": 324,
+      "area_hectares": 29.16,
+      "area_km2": 0.2916,
+      "percentage": 0.49
+    },
+    "High Severity": {
+      "pixel_count": 7800,
+      "area_hectares": 702.0,
+      "area_km2": 7.02,
+      "percentage": 11.9
+    }
+  }
+}

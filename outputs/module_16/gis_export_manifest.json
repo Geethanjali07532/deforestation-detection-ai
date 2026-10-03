@@ -1,0 +1,10 @@
+{
+  "total_features": 263,
+  "total_deforested_area_ha": 699.93,
+  "crs": "EPSG:32620",
+  "exported_files": {
+    "geojson": "outputs/module_16\\deforestation_alerts.geojson",
+    "shapefile": "outputs/module_16\\shapefile\\deforestation_alerts.shp",
+    "cloud_optimized_geotiff": "outputs/module_16\\deforestation_severity_cog.tif"
+  }
+}

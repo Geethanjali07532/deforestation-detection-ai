@@ -1,0 +1,245 @@
+"""
+create_module_07_notebook.py
+Generates the interactive Jupyter Notebook for Module 7.
+"""
+
+import json
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# 🤖 Module 7: Forest vs Non-Forest Classification\n",
+            "\n",
+            "Welcome to **Module 7** of the **Deforestation Detection from Satellite Images** project!\n",
+            "\n",
+            "### 🎯 Learning Objectives\n",
+            "1. **Pixel-Level Feature Extraction**: Transform multispectral satellite rasters into 13-dimensional biophysical feature vectors.\n",
+            "2. **Train Traditional ML Baselines**: Benchmark **Random Forest**, **Support Vector Machines (SVM)**, and **XGBoost**.\n",
+            "3. **Feature Importance Analysis**: Discover which spectral bands and indices (NDVI, NIR, SWIR, etc.) drive forest vs. non-forest separation.\n",
+            "4. **Spatial Mask Prediction**: Generate full 2D forest classification masks across satellite scenes."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import os\n",
+            "import sys\n",
+            "import glob\n",
+            "import numpy as np\n",
+            "import pandas as pd\n",
+            "import matplotlib.pyplot as plt\n",
+            "import rasterio\n",
+            "\n",
+            "# Add project root to sys.path\n",
+            "project_root = os.path.abspath('..')\n",
+            "if project_root not in sys.path:\n",
+            "    sys.path.insert(0, project_root)\n",
+            "\n",
+            "from modules.module_07_forest_classification.ml_classifier import (\n",
+            "    PixelFeatureExtractor,\n",
+            "    ForestMLClassifierSuite\n",
+            ")\n",
+            "\n",
+            "%matplotlib inline\n",
+            "print(\"✅ Module 7 machine learning components loaded successfully!\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 1. Feature Extraction: 13 Spectral & Index Features per Pixel\n",
+            "\n",
+            "For each pixel in the satellite image, we compute:\n",
+            "- **Raw Spectral Bands**: Blue, Green, Red, NIR, SWIR\n",
+            "- **Vegetation Indices**: NDVI, EVI, SAVI\n",
+            "- **Moisture & Burn Indices**: NDWI Moisture, NBR\n",
+            "- **Band Ratios**: NIR/Red, Red/Green, SWIR/NIR"
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "print(f\"Engineered Features ({len(PixelFeatureExtractor.FEATURE_NAMES)}):\", PixelFeatureExtractor.FEATURE_NAMES)"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 2. Collect Training Pixels Across Satellite Scenes\n",
+            "\n",
+            "We extract balanced pixel samples (Forest = 1, Non-Forest = 0) from training scenes."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "def get_forest_ground_truth(bands):\n",
+            "    ndvi = (bands[3] - bands[2]) / (bands[3] + bands[2] + 1e-7)\n",
+            "    return (ndvi >= 0.50).astype(np.uint8)\n",
+            "\n",
+            "train_files = sorted(glob.glob(\"../dataset/train/before/*.tif\"))\n",
+            "X_train_list, y_train_list = [], []\n",
+            "\n",
+            "for f_path in train_files[:6]:\n",
+            "    with rasterio.open(f_path) as src:\n",
+            "        b = src.read()\n",
+            "    f_label = get_forest_ground_truth(b)\n",
+            "    X_sub, y_sub = PixelFeatureExtractor.extract_training_sample(b, f_label, sample_size=4000)\n",
+            "    X_train_list.append(X_sub)\n",
+            "    y_train_list.append(y_sub)\n",
+            "\n",
+            "X_train = np.vstack(X_train_list)\n",
+            "y_train = np.concatenate(y_train_list)\n",
+            "print(f\"Extracted {len(X_train)} training pixels across {X_train.shape[1]} features.\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 3. Train Classifier Suite: Random Forest vs. SVM vs. XGBoost\n",
+            "\n",
+            "We train all three baseline algorithms and track their training speeds."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "suite = ForestMLClassifierSuite(random_state=42)\n",
+            "suite.train_all(X_train, y_train)"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 4. Benchmark Leaderboard on Unseen Test Imagery\n",
+            "\n",
+            "Evaluate models against unseen test pixels."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "test_files = sorted(glob.glob(\"../dataset/test/before/*.tif\"))\n",
+            "with rasterio.open(test_files[0]) as src:\n",
+            "    test_bands = src.read()\n",
+            "test_label = get_forest_ground_truth(test_bands)\n",
+            "X_test, y_test = PixelFeatureExtractor.extract_training_sample(test_bands, test_label, sample_size=10000)\n",
+            "\n",
+            "leaderboard = suite.evaluate_all(X_test, y_test)\n",
+            "leaderboard"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 5. Feature Importance Analysis: What Drives Forest Detection?\n",
+            "\n",
+            "Let's inspect the Gini / Gain importance scores from tree models."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "importances = suite.get_feature_importances()\n",
+            "fig, axes = plt.subplots(1, 2, figsize=(14, 5), constrained_layout=True)\n",
+            "\n",
+            "if \"Random Forest\" in importances:\n",
+            "    rf_s = importances[\"Random Forest\"].head(8).sort_values(ascending=True)\n",
+            "    axes[0].barh(rf_s.index, rf_s.values * 100, color=\"#27ae60\", edgecolor=\"black\")\n",
+            "    axes[0].set_title(\"Random Forest Feature Importance (MDI)\")\n",
+            "    axes[0].set_xlabel(\"Importance (%)\")\n",
+            "\n",
+            "if \"XGBoost\" in importances:\n",
+            "    xgb_s = importances[\"XGBoost\"].head(8).sort_values(ascending=True)\n",
+            "    axes[1].barh(xgb_s.index, xgb_s.values * 100, color=\"#e67e22\", edgecolor=\"black\")\n",
+            "    axes[1].set_title(\"XGBoost Feature Importance (Gain)\")\n",
+            "    axes[1].set_xlabel(\"Importance (%)\")\n",
+            "\n",
+            "plt.show()"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 6. Full-Scene Forest Mask Prediction\n",
+            "\n",
+            "We generate full 2D classification masks for the entire satellite scene."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "def make_rgb(bands):\n",
+            "    def s(arr):\n",
+            "        p2, p98 = np.percentile(arr, (2, 98))\n",
+            "        return np.clip((arr - p2) / (p98 - p2 + 1e-8), 0.0, 1.0)\n",
+            "    return np.stack([s(bands[2]), s(bands[1]), s(bands[0])], axis=-1)\n",
+            "\n",
+            "pred_rf = suite.predict_scene_mask(\"Random Forest\", test_bands)\n",
+            "pred_xgb = suite.predict_scene_mask(\"XGBoost\", test_bands)\n",
+            "\n",
+            "fig, axes = plt.subplots(1, 4, figsize=(18, 4.5), constrained_layout=True)\n",
+            "axes[0].imshow(make_rgb(test_bands))\n",
+            "axes[0].set_title(\"1. Test Scene (RGB)\", fontweight=\"bold\")\n",
+            "axes[0].axis(\"off\")\n",
+            "\n",
+            "axes[1].imshow(test_label, cmap=\"Greens_r\")\n",
+            "axes[1].set_title(\"2. Ground Truth Mask\", fontweight=\"bold\")\n",
+            "axes[1].axis(\"off\")\n",
+            "\n",
+            "axes[2].imshow(pred_rf, cmap=\"Greens_r\")\n",
+            "axes[2].set_title(\"3. Random Forest Mask\", fontweight=\"bold\", color=\"darkgreen\")\n",
+            "axes[2].axis(\"off\")\n",
+            "\n",
+            "axes[3].imshow(pred_xgb, cmap=\"Greens_r\")\n",
+            "axes[3].set_title(\"4. XGBoost Mask\", fontweight=\"bold\", color=\"darkorange\")\n",
+            "axes[3].axis(\"off\")\n",
+            "\n",
+            "plt.show()"
+        ]
+    }
+]
+
+notebook = {
+    "cells": cells,
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.13"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+with open("notebooks/07_forest_vs_nonforest_classification.ipynb", "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=2)
+
+print("Module 7 notebook generated at notebooks/07_forest_vs_nonforest_classification.ipynb")

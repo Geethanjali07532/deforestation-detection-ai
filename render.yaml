@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: deforestation-detection-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PORT
+        value: 8501
+      - key: PYTHONUNBUFFERED
+        value: "1"

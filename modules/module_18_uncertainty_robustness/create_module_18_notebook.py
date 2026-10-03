@@ -1,0 +1,152 @@
+"""
+create_module_18_notebook.py
+Generates the interactive Jupyter Notebook for Module 18: Model Evaluation, Robustness & Uncertainty Quantification.
+"""
+
+import json
+import os
+import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# 🛰️ Module 18: Model Evaluation, Robustness & Uncertainty Quantification\n",
+            "\n",
+            "Welcome to **Module 18** of the **Deforestation Detection from Satellite Images** project!\n",
+            "\n",
+            "### 🎯 Learning Objectives\n",
+            "1. **Bayesian Deep Learning via Monte Carlo Dropout**: Perform $T$ stochastic forward passes at inference to quantify epistemic model ambiguity.\n",
+            "2. **Spatial Uncertainty Mapping**: Compute pixel-wise predictive standard deviations $\\sigma(x, y)$ and distinguish high-confidence canopy loss from borderline ambiguous clearing.\n",
+            "3. **Sensor Noise Stress Testing**: Evaluate degradation under additive Gaussian sensor noise $\\mathcal{N}(0, \\sigma^2)$ representing sensor aging and thermal interference.\n",
+            "4. **Atmospheric Hazing & Cloud Occlusion**: Measure performance decay under synthetic cirrus cloud haze and optical attenuation.\n",
+            "5. **Calibration Curves & Expected Calibration Error (ECE)**: Construct reliability diagrams to assess whether predicted softmax probabilities accurately represent empirical correctness."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import os\n",
+            "import sys\n",
+            "import torch\n",
+            "import numpy as np\n",
+            "import matplotlib.pyplot as plt\n",
+            "\n",
+            "# Add project root to sys.path\n",
+            "project_root = os.path.abspath('..')\n",
+            "if project_root not in sys.path:\n",
+            "    sys.path.insert(0, project_root)\n",
+            "\n",
+            "from modules.module_18_uncertainty_robustness.mc_dropout_evaluator import MCDropoutChangeDetector, estimate_epistemic_uncertainty\n",
+            "from modules.module_18_uncertainty_robustness.robustness_stress_tester import RobustnessStressTester, compute_calibration_curve\n",
+            "\n",
+            "%matplotlib inline\n",
+            "print(f\"✅ PyTorch version: {torch.__version__} | Device: {'cuda' if torch.cuda.is_available() else 'cpu'}\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 1. Load Pretrained Bayesian Siamese Architecture\n",
+            "\n",
+            "We instantiate the `MCDropoutChangeDetector` with `dropout_prob=0.25` enabled in the bottleneck and decoder blocks."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\n",
+            "model = MCDropoutChangeDetector(in_channels=5, base_features=16, dropout_prob=0.25).to(device)\n",
+            "print(f\"Model parameters: {sum(p.numel() for p in model.parameters()):,}\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 2. Inspect Generated Robustness & Calibration Visualizations\n",
+            "\n",
+            "Let's visualize the results produced by the master runner in `outputs/module_18/`."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "from PIL import Image\n",
+            "\n",
+            "fig, axes = plt.subplots(3, 1, figsize=(14, 18))\n",
+            "\n",
+            "img1 = Image.open('../outputs/module_18/01_mc_dropout_uncertainty_maps.png')\n",
+            "axes[0].imshow(img1)\n",
+            "axes[0].axis('off')\n",
+            "axes[0].set_title(\"1. Monte Carlo Dropout Epistemic Uncertainty & Ambiguity Mask\", fontsize=13, fontweight='bold')\n",
+            "\n",
+            "img2 = Image.open('../outputs/module_18/02_robustness_stress_test_curves.png')\n",
+            "axes[1].imshow(img2)\n",
+            "axes[1].axis('off')\n",
+            "axes[1].set_title(\"2. Robustness Stress Testing: Gaussian Noise & Cloud Haze Degradation\", fontsize=13, fontweight='bold')\n",
+            "\n",
+            "img3 = Image.open('../outputs/module_18/03_calibration_reliability_diagram.png')\n",
+            "axes[2].imshow(img3)\n",
+            "axes[2].axis('off')\n",
+            "axes[2].set_title(\"3. Probability Calibration Reliability Diagram & ECE\", fontsize=13, fontweight='bold')\n",
+            "\n",
+            "plt.tight_layout()\n",
+            "plt.show()"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 3. Robustness & Uncertainty Quantification Report\n",
+            "\n",
+            "Let's review the JSON audit report summarizing the quantitative findings."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import json\n",
+            "report_path = '../outputs/module_18/robustness_and_uncertainty_report.json'\n",
+            "if os.path.exists(report_path):\n",
+            "    with open(report_path, 'r') as f:\n",
+            "        report = json.load(f)\n",
+            "    print(json.dumps(report, indent=2))\n",
+            "else:\n",
+            "    print(\"Run run_module_18.py to generate report.\")"
+        ]
+    }
+]
+
+nb = {
+    "cells": cells,
+    "metadata": {
+        "language_info": {
+            "name": "python",
+            "version": "3.13"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+out_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "notebooks", "18_model_robustness_and_uncertainty.ipynb")
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(nb, f, indent=2)
+
+print(f"✅ Generated Notebook: {out_path}")

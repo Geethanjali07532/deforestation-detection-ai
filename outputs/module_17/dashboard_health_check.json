@@ -1,0 +1,21 @@
+{
+  "app_entrypoint": "app.py",
+  "status": "Production Ready",
+  "launch_command": "streamlit run app.py",
+  "default_port": 8501,
+  "tabs_implemented": [
+    "1. Satellite Scene Inspector",
+    "2. Spectral & Vegetation Indices",
+    "3. Deep Learning Change Detection",
+    "4. Disturbance Severity & Drivers",
+    "5. Interactive Web GIS Map & Exporters",
+    "6. Time-Series & 12-Month Predictive Risk"
+  ],
+  "kpi_summary": {
+    "total_forest_ha": "4,858.9 ha",
+    "deforested_ha": "2,104.5 ha",
+    "intact_pct": "69.8%",
+    "alerts_count": "263 alerts",
+    "dominant_driver": "Agricultural Clearcut"
+  }
+}

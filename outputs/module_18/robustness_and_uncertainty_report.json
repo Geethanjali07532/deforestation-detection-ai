@@ -1,0 +1,143 @@
+{
+  "expected_calibration_error": 0.5155,
+  "calibration_bins": [
+    {
+      "Bin Center": 0.05,
+      "Accuracy": 0.0,
+      "Confidence": 0.05,
+      "Count": 0
+    },
+    {
+      "Bin Center": 0.15000000000000002,
+      "Accuracy": 0.0,
+      "Confidence": 0.15000000000000002,
+      "Count": 0
+    },
+    {
+      "Bin Center": 0.25,
+      "Accuracy": 0.0,
+      "Confidence": 0.25,
+      "Count": 0
+    },
+    {
+      "Bin Center": 0.35000000000000003,
+      "Accuracy": 0.0,
+      "Confidence": 0.35000000000000003,
+      "Count": 0
+    },
+    {
+      "Bin Center": 0.45,
+      "Accuracy": 0.9963218272544884,
+      "Confidence": 0.44484496116638184,
+      "Count": 116634
+    },
+    {
+      "Bin Center": 0.55,
+      "Accuracy": 0.5711065573770492,
+      "Confidence": 0.5470153093338013,
+      "Count": 4880
+    },
+    {
+      "Bin Center": 0.6500000000000001,
+      "Accuracy": 0.9850387110274116,
+      "Confidence": 0.6580167412757874,
+      "Count": 9558
+    },
+    {
+      "Bin Center": 0.75,
+      "Accuracy": 0.0,
+      "Confidence": 0.75,
+      "Count": 0
+    },
+    {
+      "Bin Center": 0.8500000000000001,
+      "Accuracy": 0.0,
+      "Confidence": 0.8500000000000001,
+      "Count": 0
+    },
+    {
+      "Bin Center": 0.95,
+      "Accuracy": 0.0,
+      "Confidence": 0.95,
+      "Count": 0
+    }
+  ],
+  "gaussian_noise_degradation": [
+    {
+      "Noise Level (Sigma)": 0.0,
+      "Mean IoU (%)": 82.07,
+      "Dice Score (%)": 90.15,
+      "Pixel Accuracy (%)": 97.97,
+      "Precision (%)": 84.51,
+      "Recall (%)": 96.6
+    },
+    {
+      "Noise Level (Sigma)": 0.05,
+      "Mean IoU (%)": 80.57,
+      "Dice Score (%)": 89.24,
+      "Pixel Accuracy (%)": 97.73,
+      "Precision (%)": 82.28,
+      "Recall (%)": 97.48
+    },
+    {
+      "Noise Level (Sigma)": 0.1,
+      "Mean IoU (%)": 60.54,
+      "Dice Score (%)": 75.42,
+      "Pixel Accuracy (%)": 93.78,
+      "Precision (%)": 60.91,
+      "Recall (%)": 99.0
+    },
+    {
+      "Noise Level (Sigma)": 0.15,
+      "Mean IoU (%)": 21.27,
+      "Dice Score (%)": 35.08,
+      "Pixel Accuracy (%)": 64.44,
+      "Precision (%)": 21.28,
+      "Recall (%)": 99.69
+    },
+    {
+      "Noise Level (Sigma)": 0.2,
+      "Mean IoU (%)": 10.99,
+      "Dice Score (%)": 19.81,
+      "Pixel Accuracy (%)": 22.07,
+      "Precision (%)": 10.99,
+      "Recall (%)": 99.87
+    }
+  ],
+  "cloud_haze_degradation": [
+    {
+      "Haze Intensity": 0.0,
+      "Mean IoU (%)": 82.07,
+      "Dice Score (%)": 90.15,
+      "Pixel Accuracy (%)": 97.97,
+      "Precision (%)": 84.51,
+      "Recall (%)": 96.6
+    },
+    {
+      "Haze Intensity": 0.1,
+      "Mean IoU (%)": 76.96,
+      "Dice Score (%)": 86.98,
+      "Pixel Accuracy (%)": 97.15,
+      "Precision (%)": 77.64,
+      "Recall (%)": 98.87
+    },
+    {
+      "Haze Intensity": 0.2,
+      "Mean IoU (%)": 54.06,
+      "Dice Score (%)": 70.18,
+      "Pixel Accuracy (%)": 91.83,
+      "Precision (%)": 54.13,
+      "Recall (%)": 99.78
+    },
+    {
+      "Haze Intensity": 0.3,
+      "Mean IoU (%)": 10.05,
+      "Dice Score (%)": 18.26,
+      "Pixel Accuracy (%)": 13.76,
+      "Precision (%)": 10.05,
+      "Recall (%)": 99.98
+    }
+  ],
+  "mean_epistemic_uncertainty": 0.0096,
+  "high_uncertainty_pixels_pct": 0.0
+}

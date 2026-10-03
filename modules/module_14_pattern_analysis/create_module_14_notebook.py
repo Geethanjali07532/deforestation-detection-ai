@@ -1,0 +1,147 @@
+"""
+create_module_14_notebook.py
+Generates the interactive Jupyter Notebook for Module 14: Fire, Logging & Road Pattern Analysis.
+"""
+
+import json
+import os
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# 🌲 Module 14: Fire, Logging & Road Encroachment Pattern Analysis\n",
+            "\n",
+            "Welcome to **Module 14** of the **Deforestation Detection from Satellite Images** project!\n",
+            "\n",
+            "### 🎯 Learning Objectives\n",
+            "1. **Landscape Ecology Patterns**: Understand how roads, fires, logging, and clearcuts generate distinct spatial geometries.\n",
+            "2. **Morphological Extraction**: Compute patch metrics: Linearity, Circularity, Solidity, and Fractal Dimension.\n",
+            "3. **Disturbance Driver Attribution**: Automatically classify each deforestation polygon into its anthropological or natural driver.\n",
+            "4. **Edge Effect & Fragmentation**: Model the 100m degraded edge effect buffer and quantify intact core forest losses."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "import os\n",
+            "import sys\n",
+            "import glob\n",
+            "import numpy as np\n",
+            "import pandas as pd\n",
+            "import matplotlib.pyplot as plt\n",
+            "import rasterio\n",
+            "import cv2\n",
+            "\n",
+            "# Add project root to sys.path\n",
+            "project_root = os.path.abspath('..')\n",
+            "if project_root not in sys.path:\n",
+            "    sys.path.insert(0, project_root)\n",
+            "\n",
+            "from modules.module_13_severity_classification.severity_indices import DisturbanceSeverityCalculator\n",
+            "from modules.module_14_pattern_analysis.morphological_analyzer import (\n",
+            "    PatchMorphologyExtractor, ForestFragmentationAnalyzer\n",
+            ")\n",
+            "from modules.module_14_pattern_analysis.driver_classifier import DisturbanceDriverClassifier\n",
+            "\n",
+            "%matplotlib inline\n",
+            "print(\"✅ Module 14 Pattern Analysis Environment Initialized!\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 1. Extract Patch Morphology from Test Imagery\n",
+            "\n",
+            "We extract contours and compute geometric metrics for every connected disturbance polygon."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "calc = DisturbanceSeverityCalculator()\n",
+            "extractor = PatchMorphologyExtractor(min_patch_pixels=4, pixel_res_meters=30.0)\n",
+            "driver_clf = DisturbanceDriverClassifier()\n",
+            "\n",
+            "test_b = sorted(glob.glob(\"../dataset/test/before/*.tif\"))\n",
+            "test_a = sorted(glob.glob(\"../dataset/test/after/*.tif\"))\n",
+            "test_m = sorted(glob.glob(\"../dataset/test/masks/*.tif\"))\n",
+            "\n",
+            "with rasterio.open(test_b[0]) as s1:\n",
+            "    t1 = s1.read()\n",
+            "with rasterio.open(test_a[0]) as s2:\n",
+            "    t2 = s2.read()\n",
+            "with rasterio.open(test_m[0]) as sm:\n",
+            "    mask = sm.read(1)\n",
+            "\n",
+            "idx = calc.compute_all_indices(t1, t2)\n",
+            "patches, labeled_mask = extractor.extract_patch_metrics(mask, dnbr_raster=idx[\"dnbr\"])\n",
+            "print(f\"Extracted {len(patches)} disturbance patches from Scene 1\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 2. Disturbance Driver Attribution\n",
+            "\n",
+            "Classify each patch into: Road Encroachment, Wildfire Scar, Selective Logging, or Agricultural Clearcut."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "df_patches = driver_clf.classify_all_patches(patches)\n",
+            "driver_stats = driver_clf.compute_driver_statistics(df_patches)\n",
+            "\n",
+            "for driver, s in driver_stats.items():\n",
+            "    print(f\"{driver:<24}: {s['patch_count']:>3} patches | {s['total_area_ha']:>7.2f} ha ({s['area_percentage']:>5.2f}%)\")"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## 3. Forest Fragmentation & 100m Edge Buffer Analysis\n",
+            "\n",
+            "Quantifies Core Forest (>100m from edge) vs. Degraded Edge Forest (<=100m from edge)."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "source": [
+            "frag_analyzer = ForestFragmentationAnalyzer(edge_buffer_meters=100.0, pixel_res_meters=30.0)\n",
+            "forest_t1 = (calc.compute_ndvi(t1[3], t1[2]) >= 0.50).astype(np.uint8)\n",
+            "\n",
+            "frag_metrics, frag_map = frag_analyzer.analyze_fragmentation(forest_t1, mask)\n",
+            "print(f\"Total Remaining Forest : {frag_metrics['total_forest_remaining_ha']:.1f} ha\")\n",
+            "print(f\"Core Forest (>100m)    : {frag_metrics['core_forest_ha']:.1f} ha ({frag_metrics['core_forest_percentage']:.1f}%)\")\n",
+            "print(f\"Edge Forest (<=100m)   : {frag_metrics['edge_forest_ha']:.1f} ha ({frag_metrics['edge_forest_percentage']:.1f}%)\")"
+        ]
+    }
+]
+
+notebook = {
+    "cells": cells,
+    "metadata": {
+        "language_info": {"name": "python", "version": "3.13"}
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+out_path = os.path.join(os.path.dirname(__file__), "..", "..", "notebooks", "14_fire_logging_road_pattern_analysis.ipynb")
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=2)
+
+print(f"Created Module 14 Notebook at: {out_path}")
